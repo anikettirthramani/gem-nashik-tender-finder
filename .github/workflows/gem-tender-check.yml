@@ -1,34 +1,40 @@
 name: GeM Nashik Tender Check
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
-  schedule:
-    - cron: "0 */6 * * *"
+schedule:
+- cron: "0 */6 * * *"
 
 permissions:
-  contents: write
+contents: write
 
 jobs:
-  check-tenders:
-    runs-on: ubuntu-latest
+check-tenders:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Download repository
-        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+steps:
+  - name: Download repository
+    uses: actions/checkout@v4
 
-      - name: Install packages
-        run: |
-          pip install -r requirements.txt
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.12"
 
-      - name: Check GeM tenders
-        env:
-          TELEGRAM_BOT_TOKEN: "${{ secrets.TELEGRAM_BOT_TOKEN }}"
-          TELEGRAM_CHAT_ID: "${{ secrets.TELEGRAM_CHAT_ID }}"
-        run: |
-          python gem_tender_finder.py
+  - name: Install packages
+    run: |
+      pip install -r requirements.txt
+
+  - name: Install Playwright browser
+    run: |
+      playwright install --with-deps chromium
+
+  - name: Check GeM tenders
+    env:
+      TELEGRAM_BOT_TOKEN: "${{ secrets.TELEGRAM_BOT_TOKEN }}"
+      TELEGRAM_CHAT_ID: "${{ secrets.TELEGRAM_CHAT_ID }}"
+    run: |
+      python gem_tender_finder.py
+
