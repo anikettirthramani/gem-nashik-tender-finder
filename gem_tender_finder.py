@@ -2,140 +2,129 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-# Telegram settings from GitHub Secrets
-
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# Your business-related keywords
-
-KEYWORDS = [
-"fly ash",
-"pond ash",
-"transportation",
-"transport",
-"loading",
-"unloading",
-"backhoe loader",
-"jcb",
-"earthmoving",
-"earth moving",
-"excavation",
-"earthwork",
-"earth work",
-"dumper",
-]
-
-# Nashik location keywords
-
-LOCATION_KEYWORDS = [
-"nashik",
-"nasik",
-]
-
 GEM_URL = "https://bidplus.gem.gov.in/all-bids"
 
+KEYWORDS = [
+    "fly ash",
+    "pond ash",
+    "transportation",
+    "transport",
+    "loading",
+    "unloading",
+    "backhoe loader",
+    "jcb",
+    "earthmoving",
+    "earth moving",
+    "excavation",
+    "earthwork",
+    "earth work",
+    "dumper",
+]
+
+LOCATION_KEYWORDS = [
+    "nashik",
+    "nasik",
+]
+
+
 def contains_keyword(text, keywords):
-text = text.lower()
-return any(keyword in text for keyword in keywords)
+    text = text.lower()
+    return any(
+        keyword in text
+        for keyword in keywords
+    )
+
 
 def send_telegram_message(message):
-if not BOT_TOKEN or not CHAT_ID:
-print("Telegram secrets are missing.")
-return
+    if not BOT_TOKEN or not CHAT_ID:
+        print("Telegram secrets are missing.")
+        return
 
-```
-url = (
-    f"https://api.telegram.org/"
-    f"bot{BOT_TOKEN}/sendMessage"
-)
+    url = (
+        "https://api.telegram.org/"
+        f"bot{BOT_TOKEN}/sendMessage"
+    )
 
-data = {
-    "chat_id": CHAT_ID,
-    "text": message,
-    "disable_web_page_preview": True,
-}
+    response = requests.post(
+        url,
+        data={
+            "chat_id": CHAT_ID,
+            "text": message,
+        },
+        timeout=30,
+    )
 
-response = requests.post(
-    url,
-    data=data,
-    timeout=30,
-)
+    response.raise_for_status()
+    print("Telegram message sent.")
 
-response.raise_for_status()
-print("Telegram message sent successfully.")
-```
 
 def get_gem_tenders():
-headers = {
-"User-Agent": (
-"Mozilla/5.0 "
-"(X11; Linux x86_64) "
-"AppleWebKit/537.36 "
-"Chrome/130 Safari/537.36"
-)
-}
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
-```
-response = requests.get(
-    GEM_URL,
-    headers=headers,
-    timeout=30,
-)
-
-response.raise_for_status()
-
-soup = BeautifulSoup(
-    response.text,
-    "html.parser",
-)
-
-tenders = []
-
-for row in soup.find_all(["tr", "div"]):
-    text = row.get_text(
-        " ",
-        strip=True,
+    response = requests.get(
+        GEM_URL,
+        headers=headers,
+        timeout=30,
     )
 
-    if len(text) < 30:
-        continue
+    response.raise_for_status()
 
-    keyword_match = contains_keyword(
-        text,
-        KEYWORDS,
+    soup = BeautifulSoup(
+        response.text,
+        "html.parser",
     )
 
-    location_match = contains_keyword(
-        text,
-        LOCATION_KEYWORDS,
-    )
+    tenders = []
 
-    if keyword_match and location_match:
-        tenders.append(
-            text[:900]
+    for item in soup.find_all(
+        ["tr", "div"]
+    ):
+        text = item.get_text(
+            " ",
+            strip=True,
         )
 
-return list(
-    dict.fromkeys(tenders)
-)
-```
+        if len(text) < 30:
+            continue
+
+        has_keyword = contains_keyword(
+            text,
+            KEYWORDS,
+        )
+
+        has_location = contains_keyword(
+            text,
+            LOCATION_KEYWORDS,
+        )
+
+        if has_keyword and has_location:
+            tenders.append(
+                text[:800]
+            )
+
+    return list(
+        dict.fromkeys(tenders)
+    )
+
 
 def main():
-print(
-"Checking GeM tenders for Nashik..."
-)
+    print(
+        "Checking GeM tenders..."
+    )
 
-```
-try:
     tenders = get_gem_tenders()
 
     print(
-        "Matching tenders found:",
+        "Matching tenders:",
         len(tenders),
     )
 
-    if not tenders:
+    if len(tenders) == 0:
         print(
             "No matching tender found."
         )
@@ -143,9 +132,7 @@ try:
 
     message = (
         "NEW GeM TENDER ALERT\n\n"
-        "Location: Nashik\n"
-        f"Matching tenders: "
-        f"{len(tenders)}\n\n"
+        "Location: Nashik\n\n"
     )
 
     for number, tender in enumerate(
@@ -157,31 +144,13 @@ try:
         )
 
     message += (
-        "GeM Bid Search:\n"
-        "https://bidplus.gem.gov.in/"
-        "all-bids"
+        "https://bidplus.gem.gov.in/all-bids"
     )
 
     send_telegram_message(
         message
     )
 
-except Exception as error:
-    print(
-        "Error:",
-        error,
-    )
 
-    try:
-        send_telegram_message(
-            "GeM Tender Finder Error:\n"
-            f"{error}"
-        )
-    except Exception:
-        pass
-
-    raise
-```
-
-if **name** == "**main**":
-main()
+if __name__ == "__main__":
+    main()
