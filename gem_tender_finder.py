@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-GEM_URL = "https://bidplus.gem.gov.in/all-bids"
+GEM_URL = "https://bidplus-global.gem.gov.in/"
 
 KEYWORDS = [
     "fly ash",
